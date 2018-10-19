@@ -39,7 +39,7 @@ def flag(tag=''):
 #---------------------------- read data ---------------------------------------------------#
 if dev:
     #when ran locally
-    file = open('input_small.txt', mode = 'r')
+    file = open('input_large.txt', mode = 'r')
     line = file.readline()
     first_line = line.rstrip().split(' ')
     size = int(first_line[0])
@@ -145,7 +145,7 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
             choices = flight_list_iter
 
             if choices.size > 0:
-                checks = list([item not in visited for item in choices[:,5]])
+                checks = np.array([item not in visited for item in choices[:,5]])
                 choices = choices[checks]    
 
             if choices.size > 0:
@@ -155,7 +155,7 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
                 check_bl = np.array([item not in blacklist_flights.tolist() for item in choices_flights.tolist()])
                 choices = choices[check_bl]
 
-                indeces = list([item is not None for item in choices[:,1]])
+                indeces = np.array([item is not None for item in choices[:,1]])
                 choices = choices[indeces]
             #--------------------- choose a flight to take
             if choices.size > 0:
@@ -171,13 +171,13 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
                         choices_plus = np.vstack([choices_plus, flights_from_apt[x][day_plus],
                                                             flights_from_apt[x]['0']])
                     
-                    checks = list([item not in visited for item in choices_plus[:,5]])
+                    checks = np.array([item not in visited for item in choices_plus[:,5]])
                     choices_plus = choices_plus[checks] 
 
                     rank = [0]*len(choices)
                     for x in range(0,len(choices)):
-                        check_plus =(choices_plus[:,0]==choices[x,1])
-                        flights_plus = choices_plus[list(check_plus)] 
+                        check_plus =np.array(choices_plus[:,0]==choices[x,1])
+                        flights_plus = choices_plus[check_plus] 
                         
                         if flights_plus.size >0 : 
                             rank[x] = int(choices[x,3]) + int(min(flights_plus[:,3]))
@@ -192,7 +192,6 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
                 new_zone = choice[5]
         
                 itinerary.append(choice)
-
                 visited.append(new_zone)
                 current_zone = new_zone
                 current_airport = new_airport
@@ -218,6 +217,7 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
             choice = choices[np.argmin(choices[:, 3])]
             choice[2] = size
             itinerary.append(choice)
+            visited.append(dep_zone)
             k = tries
             tries = 0
             first_time = False
@@ -229,7 +229,6 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
     #------------- if you have time go back and solve it differently
     if (time.time()-start) > 0.8*time_to_solve and not first_time : break
     
-    if np.all(itinerary[0]==0) : del itinerary[0]
     new_price = sum(int(line[3]) for line in itinerary) 
     if first_time: sum_price = new_price
     if (sum_prices == 0 or new_price < sum_prices) and len(itinerary) == size : 
@@ -242,6 +241,8 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
     if dev: print('new price: ', new_price, 'random rewind: ', random_rewind, 'time: '+str(round(time.time()-start,0)))
     rollback(random_rewind, False)
     tries = tries + 1
+    day = str(int(day) +1)
+    
 
 if np.all(winner[0]==0) : del winner[0]      
 sum_prices = sum(int(line[3]) for line in winner) 
