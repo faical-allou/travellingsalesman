@@ -1,0 +1,8 @@
+AB0,AB1,1,1
+,Zona_0,Zona_1
+AB1,AB8,2,100
+,Zona_1,Zona_8
+AB8,AB3,2,123
+,Zona_8,Zona_3
+AB3,AB0,10,2983
+,Zona_3,Zona_0
