@@ -10,18 +10,21 @@ def rollback(steps=1, apply_bl=True):
     initial_length = len(itinerary)
     for k in range(0,steps):
         if initial_length > 0 and apply_bl: blacklist = np.vstack([blacklist,itinerary[-1]])
-        if initial_length < steps+2:
+        if initial_length <= steps+2:
             current_airport = dep_apt
             current_zone = dep_zone
             itinerary = []
             visited = [dep_zone]
+            day = '1'
             break
         else: 
             del itinerary[-1]
-            del visited[-1]
             current_airport = itinerary[-1][1]
             current_zone = itinerary[-1][4]
-    day = str(max(1, int(day)-steps)) # need to set up for the following day to start computing
+            visited = [dep_zone]
+            for itin in itinerary:
+                visited.append(itin[5])
+            day = str(max(1, int(day)-steps)) # need to set up for the following day to start computing
 
 def measure(tag=''):
     global day, tries, start, flight_list_iter, choices, dev
@@ -217,7 +220,6 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
             choice = choices[np.argmin(choices[:, 3])]
             choice[2] = size
             itinerary.append(choice)
-            visited.append(dep_zone)
             k = tries
             tries = 0
             first_time = False
@@ -243,7 +245,10 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
     tries = tries + 1
     day = str(int(day) +1)
     
-
+if (sum_prices == 0 or new_price < sum_prices) and len(itinerary) == size : 
+        winner = itinerary[:]
+        sum_prices = new_price
+    
 if np.all(winner[0]==0) : del winner[0]      
 sum_prices = sum(int(line[3]) for line in winner) 
 print(sum_prices)
