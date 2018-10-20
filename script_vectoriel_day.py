@@ -24,7 +24,7 @@ def rollback(steps=1, apply_bl=True):
             visited = [dep_zone]
             for itin in itinerary:
                 visited.append(itin[5])
-            day = str(max(1, int(day)-steps)) # need to set up for the following day to start computing
+    day = str(len(itinerary)) # need to set up for the following day to start computing
 
 def measure(tag=''):
     global day, tries, start, flight_list_iter, choices, dev
@@ -42,7 +42,7 @@ def flag(tag=''):
 #---------------------------- read data ---------------------------------------------------#
 if dev:
     #when ran locally
-    file = open('input_large.txt', mode = 'r')
+    file = open('input_large2.txt', mode = 'r')
     line = file.readline()
     first_line = line.rstrip().split(' ')
     size = int(first_line[0])
@@ -114,9 +114,9 @@ current_day = 1
 current_zone = dep_zone
 choice=[]
 visited = [dep_zone]
-blacklist = np.array([['---', '---', '1', '0','---','---']])
+blacklist = np.array([[None,None, None, None, None, None]])
 
-day = '1'
+day = '0'
 tries = 1
 
 if size <= 20: 
@@ -137,8 +137,9 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
     while tries != 0: #------------- while not back at home       
         if (time.time()-start) > 0.8*time_to_solve and not first_time : break
         
-        while  int(day) < size: #----------- loop for every day
+        while  int(day) < size-1: #----------- loop for every day
             if (time.time()-start) > 0.8*time_to_solve and not first_time : break
+            day = str(len(itinerary)+1)
             current_day = day
             
             #------------------ make up list of choices for the day
@@ -189,8 +190,6 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
                     choices = choices[np.array(rank).argsort()]                          #sort by score
                     choice = np.array(choices[0] )
 
-                choice[2] = day
-
                 new_airport = choice[1]
                 new_zone = choice[5]
         
@@ -198,16 +197,15 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
                 visited.append(new_zone)
                 current_zone = new_zone
                 current_airport = new_airport
-                day = str(int(day) +1)
-
-            else: # if no choice for the day -> reset
+                
+            else: # if no choice for the day -> rollback
                 rollback(1)
                 choice=[]
                 tries = tries+1
 
         #------------------final flight back to departing zone
+        day = str(len(itinerary)+1)
         current_day = day
-
         flight_list_iter = np.vstack([flights_from_apt[current_airport][current_day],
                                             flights_from_apt[current_airport]['0']])
 
@@ -220,7 +218,6 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
             choice = choices[np.argmin(choices[:, 3])]
             choice[2] = size
             itinerary.append(choice)
-            k = tries
             tries = 0
             first_time = False
         else:
@@ -243,7 +240,6 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
     if dev: print('new price: ', new_price, 'random rewind: ', random_rewind, 'time: '+str(round(time.time()-start,0)))
     rollback(random_rewind, False)
     tries = tries + 1
-    day = str(int(day) +1)
     
 if (sum_prices == 0 or new_price < sum_prices) and len(itinerary) == size : 
         winner = itinerary[:]
