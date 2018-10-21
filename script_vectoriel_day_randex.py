@@ -43,7 +43,7 @@ def flag(tag=''):
 #---------------------------- read data ---------------------------------------------------#
 if dev:
     #when ran locally
-    file = open('input_large2.txt', mode = 'r')
+    file = open('input_large.txt', mode = 'r')
     line = file.readline()
     first_line = line.rstrip().split(' ')
     size = int(first_line[0])
@@ -106,6 +106,8 @@ measure('end of read')
 itinerary = []
 winner =[]
 rerun = 0
+one_off = 0
+
 current_airport = dep_apt
 dep_zone = zones[dep_apt]
 current_day = 1
@@ -119,25 +121,27 @@ day = '0'
 tries = 1
 
 if size <= 20: 
-    time_to_solve = 3
+    time_limit = 3
 else: 
     if size <= 100:
-        time_to_solve = 5
+        time_limit = 5
     else: 
-        time_to_solve = 15
+        time_limit = 150
+
+time_to_solve = 0.9*time_limit
 
 sum_prices = 0
 
 first_time = True
 
-while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while you still have time
+while (time.time()-start) < time_to_solve or first_time : #----------while you still have time
     tries = 1
     
     while tries != 0: #------------- while not back at home       
-        if (time.time()-start) > 0.8*time_to_solve and not first_time : break
+        if (time.time()-start) > time_to_solve and not first_time : break
         
         while  int(day) < size-1: #----------- loop for every day
-            if (time.time()-start) > 0.8*time_to_solve and not first_time : break
+            if (time.time()-start) > time_to_solve and not first_time : break
             day = str(len(itinerary)+1)
             current_day = day
             
@@ -147,7 +151,7 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
                 flights_from_apt.setdefault(current_airport).setdefault('0',blank_flight)] )
 
             choices = flight_list_iter
-
+            
             if choices.size > 0:
                 checks = np.array([item not in visited for item in choices[:,5]])
                 choices = choices[checks]    
@@ -167,37 +171,9 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
             if choices.size > 0:
                 rank = choices[:,3].astype('int')
                 choices = choices[rank.argsort()]                          #sort by price
-                choice = choices[0]                                        #take the cheapest
-                
-                if not first_time and int(day) < size-2 and random.randint(0, 1) == 1:         #check also cheapest following day
-                    potential_dest = choices[:,[1,3]]
-                    day_plus = str(int(current_day)+1)
-                    choices_plus = np.array([['---', '---', '1', '0','---','---']])
-                    for x in potential_dest[:,0]:
-                        choices_plus = np.vstack([
-                                choices_plus, 
-                                flights_from_apt.setdefault(x).setdefault(day_plus,blank_flight),
-                                flights_from_apt.setdefault(x).setdefault('0',blank_flight)] )
-                    
-                    checks = np.array([np.all(item[5] not in visited and item[5] != item[4])  for item in choices_plus])
-                    choices_plus = choices_plus[checks] 
-                    if choices_plus.size > 0:
-                        max_plus = np.max((choices_plus[:,3]).astype('int'))
-                    else:
-                        max_plus = 0
-                    
-                    rank = [0]*len(choices)
-                    for x in range(0,len(choices)):
-                        check_plus =np.array(choices_plus[:,0]==choices[x,1])
-                        flights_plus = choices_plus[check_plus] 
-                        
-                        if flights_plus.size >0 : 
-                            rank[x] = int(choices[x,3]) + int(min(flights_plus[:,3]))
-                        else: 
-                            rank[x] = int(choices[x,3]) + max_plus
-
-                    choices = choices[np.array(rank).argsort()]                         #sort by score
-                    choice = np.array(choices[0] )
+                #choice = choices[0]                                       #take the cheapest
+                choice = choices[min(one_off, len(choices)-1)]    #take one of the cheapest once, after rerun
+                one_off = 0                                                           
 
                 new_airport = choice[1]
                 new_zone = choice[5]
@@ -231,12 +207,12 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
             tries = 0
             first_time = False
         else:
-            rollback(2)
+            rollback(1)
             choice = []
             tries = tries + 1
     
     #------------- if you have time go back and solve it differently
-    if (time.time()-start) > 0.8*time_to_solve and not first_time : break
+    if (time.time()-start) > time_to_solve and not first_time : break
     
     new_price = sum(int(line[3]) for line in itinerary) 
     if first_time: sum_price = new_price
@@ -246,6 +222,7 @@ while (time.time()-start) < 0.8*time_to_solve or first_time : #----------while y
     
     itinerary = winner[:]
     rerun = rerun+1
+    one_off = 1
     random_rewind = random.randint(2,size-1)
     if dev: print('new price: ', new_price, 'random rewind: ', random_rewind, 'time: '+str(round(time.time()-start,0)))
     rollback(random_rewind, False)
