@@ -43,7 +43,7 @@ def flag(tag=''):
 #---------------------------- read data ---------------------------------------------------#
 if dev:
     #when ran locally
-    file = open('input_large.txt', mode = 'r')
+    file = open('input_large2.txt', mode = 'r')
     line = file.readline()
     first_line = line.rstrip().split(' ')
     size = int(first_line[0])
@@ -59,16 +59,15 @@ if dev:
         zone_list =  line.rstrip().split(' ')
         for apt in zone_list:
             zones[apt] = zone_name[0]
-            flights_from_apt[apt] = {}
         zones_name.append(zone_name[0])  
     try: 
         measure('before flights input')
         while line is not None:
-            line = next(file)
-            flight = line.split(' ')
-            apt_from = flight[0]
-            flight.extend([zones[apt_from],zones[flight[1]]])
-            flights_from_apt.setdefault(apt_from).setdefault(flight[2],[]).append(flight)
+            flight = next(file).split(' ')                                                        # 2.5s
+            flight.extend([zones[flight[0]],zones[flight[1]]])      
+            flights_from_apt.setdefault(flight[0],{})    \
+                            .setdefault(flight[2],[])   \
+                            .append(flight)                         
     except StopIteration:
         pass
 
@@ -89,15 +88,14 @@ else:
         zone_list =  line.rstrip().split(' ')
         for apt in zone_list:
             zones[apt] = zone_name[0]
-            flights_from_apt[apt] = {}
         zones_name.append(zone_name[0])  
     try: 
         while line is not None:
-            line = raw_input()
-            flight = line.split(' ')
-            apt_from = flight[0]
-            flight.extend([zones[apt_from],zones[flight[1]]])
-            flights_from_apt.setdefault(apt_from).setdefault(flight[2],[]).append(flight)
+            flight = raw_input().split(' ')                                                        # 2.5s
+            flight.extend([zones[flight[0]],zones[flight[1]]])      
+            flights_from_apt.setdefault(flight[0],{})    \
+                            .setdefault(flight[2],[])   \
+                            .append(flight)  
     except EOFError:
         pass
 
@@ -126,9 +124,9 @@ else:
     if size <= 100:
         time_limit = 5
     else: 
-        time_limit = 150
+        time_limit = 15
 
-time_to_solve = 0.9*time_limit
+time_to_solve = 0.8*time_limit
 
 sum_prices = 0
 
@@ -147,8 +145,8 @@ while (time.time()-start) < time_to_solve or first_time : #----------while you s
             
             #------------------ make up list of choices for the day
             flight_list_iter = np.vstack(
-                [flights_from_apt.setdefault(current_airport).setdefault(current_day,blank_flight),
-                flights_from_apt.setdefault(current_airport).setdefault('0',blank_flight)] )
+                [flights_from_apt.setdefault(current_airport,{}).setdefault(current_day,blank_flight),
+                flights_from_apt.setdefault(current_airport,{}).setdefault('0',blank_flight)] )
 
             choices = flight_list_iter
             
@@ -172,7 +170,7 @@ while (time.time()-start) < time_to_solve or first_time : #----------while you s
                 rank = choices[:,3].astype('int')
                 choices = choices[rank.argsort()]                          #sort by price
                 #choice = choices[0]                                       #take the cheapest
-                choice = choices[min(one_off, len(choices)-1)]    #take one of the cheapest once, after rerun
+                choice = choices[min(random.randint(one_off,one_off*4), len(choices)-1)]    #take one of the cheapest once, after rerun
                 one_off = 0                                                           
 
                 new_airport = choice[1]
@@ -192,8 +190,8 @@ while (time.time()-start) < time_to_solve or first_time : #----------while you s
         day = str(len(itinerary)+1)
         current_day = day
         flight_list_iter = np.vstack(
-            [flights_from_apt.setdefault(current_airport).setdefault(current_day,blank_flight),
-            flights_from_apt.setdefault(current_airport).setdefault('0',blank_flight)] )
+            [flights_from_apt.setdefault(current_airport,{}).setdefault(current_day,blank_flight),
+            flights_from_apt.setdefault(current_airport,{}).setdefault('0',blank_flight)] )
 
         
         indeces = [np.logical_and(flight_list_iter[:,5] == dep_zone, 
