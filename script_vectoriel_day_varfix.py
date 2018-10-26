@@ -43,7 +43,7 @@ def flag(tag=''):
 #---------------------------- read data ---------------------------------------------------#
 if dev:
     #when ran locally
-    file = open('input_large2.txt', mode = 'r')
+    file = open('input_small.txt', mode = 'r')
     line = file.readline()
     first_line = line.rstrip().split(' ')
     size = int(first_line[0])
@@ -114,6 +114,7 @@ choice=[]
 visited = [dep_zone]
 blacklist = np.array([[None,None, None, None, None, None]])
 blank_flight = [[None,None, None, None, None, None]]
+blacklist_saved = []
 
 day = '0'
 tries = 1
@@ -217,26 +218,43 @@ while (time.time()-start) < time_to_solve or first_time : #----------while you s
     if (sum_prices == 0 or new_price < sum_prices) and len(itinerary) == size : 
         winner = itinerary[:]
         sum_prices = new_price
+        deals = []
+        for flight_itin in winner:
+            flight_compare = []
+            for i in range(0,size):
+                flight_compare_day = [f for f in flights_from_apt[flight_itin[0]].setdefault(str(i),0) if f[1] == flight_itin[1]]
+                flight_compare.extend(flight_compare_day)
+            deal = float(flight_itin[3]) - (sum([float(f[3]) for f in flight_compare])  / float(len(flight_compare)))
+            deals.append(deal)
+
+        deals_array = np.array(deals)
+        max_var = deals_array.argmax()
+        balcklits_saved = blacklist[:]
+        blacklist = np.vstack([blacklist,winner[max_var]])
+        random_rewind =  size
+
+    else:
+        one_off = 1
+        if len(blacklist_saved) > 0: blacklist = blacklist_saved
+        itinerary_array = np.array(itinerary)
+        max_index = itinerary_array[:,3].astype('int').argmax()
+        random_rewind = (size - max_index) + random.randint(0,max_index)
+
 
     itinerary = winner[:]
     rerun = rerun+1
-    one_off = 1
     
-    itinerary_array = np.array(itinerary)
-    max_index = itinerary_array[:,3].astype('int').argmax()
-
-    random_rewind = (size - max_index) + random.randint(0,max_index)
-    random_rewind = random.randint(1,size)
+  
     rollback(random_rewind, False)
     
-    if dev: print('new price: ', new_price, 'random rewind: ', random_rewind, 'time: '+str(round(time.time()-start,0)))
+    if dev: print('npriz: ', new_price, 'randrw: ', random_rewind, 'randrollb?: '+str(one_off))
     tries = tries + 1
     
 if (sum_prices == 0 or new_price < sum_prices) and len(itinerary) == size : 
         winner = itinerary[:]
         sum_prices = sum(int(line[3]) for line in itinerary) 
     
-if np.all(winner[0]==0) : del winner[0]      
+if np.all(winner[0][0]==0) : del winner[0]      
 sum_prices = sum(int(line[3]) for line in winner) 
 print(sum_prices)
 
