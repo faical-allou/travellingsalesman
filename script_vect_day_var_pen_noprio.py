@@ -49,7 +49,7 @@ zone_prices_to = {}
 
 if dev:
     #when ran locally
-    file = open('input_medium.txt', mode = 'r')
+    file = open('input_xlarge.txt', mode = 'r')
     line = file.readline()
     first_line = line.rstrip().split(' ')
     size = int(first_line[0])
@@ -127,7 +127,7 @@ else:
     else: 
         time_limit = 15
 
-time_to_solve = 0.85*time_limit
+time_to_solve = 0.9*time_limit
 
 sum_prices = 0
 
@@ -136,6 +136,7 @@ first_time = True
 #####--- avg price to go to a zone is compared to price available each day to know if you should wait
 for key_to in zone_prices_to:
     zone_prices_to[key_to] = sum(int(value) for value in zone_prices_to[key_to]) / len(zone_prices_to[key_to])
+
 
 while (time.time()-start) < time_to_solve or first_time : #----------while you still have time
     tries = 1
@@ -175,8 +176,8 @@ while (time.time()-start) < time_to_solve or first_time : #----------while you s
 
                 # using (1-day/size) because probability of finding cheaper goes down
                 # deals is checking if the price I see is good compared to average
-                # overpaid later checks if the price goes up later if I stay "greedy"
-                rank = choices[:,3].astype('float') + (deals - overpaid_later)*(1-float(day)/size) 
+                # overpaid_later checks if the price goes up later if I stay "greedy" today
+                rank = choices[:,3].astype('float') + deals*0.5 - overpaid_later*0
                         
                 choices = choices[rank.argsort()]
                 choice = choices[min(random.randint(one_off,one_off*5),len(choices)-1)]
@@ -194,10 +195,10 @@ while (time.time()-start) < time_to_solve or first_time : #----------while you s
                 rollback(1)
                 choice=[]
                 tries = tries+1
-                if not first_time and tries > size/3: break
+                if not first_time and tries > size/2: break
         
         #------------------final flight back to departing zone
-        if not first_time and tries > size/3: break
+        if not first_time and tries > size/2: break
         day = str(len(itinerary)+1)
 
         flight_list_iter = np.vstack(
@@ -233,7 +234,6 @@ while (time.time()-start) < time_to_solve or first_time : #----------while you s
             overpaid[itin[5]] = int(itin[3]) - zone_prices_to[itin[5]]
     else:
         blacklist = blacklist_saved[:]
-        
 
     rerun = rerun+1
     one_off = 1
@@ -250,7 +250,6 @@ if (sum_prices == 0 or new_price < sum_prices) and len(itinerary) == size :
         winner = itinerary[:]
         sum_prices = sum(int(line[3]) for line in itinerary) 
     
-if np.all(winner[0]==0) : del winner[0]      
 sum_prices = sum(int(line[3]) for line in winner) 
 print(sum_prices)
 
