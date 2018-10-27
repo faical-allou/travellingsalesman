@@ -45,12 +45,11 @@ def flag(tag=''):
 zones = {}
 zones_name = []
 flights_from_apt = {}
-zones_prio = {}
 zone_prices_to = {}
 
 if dev:
     #when ran locally
-    file = open('input_large.txt', mode = 'r')
+    file = open('input_medium.txt', mode = 'r')
     line = file.readline()
     first_line = line.rstrip().split(' ')
     size = int(first_line[0])
@@ -72,7 +71,6 @@ if dev:
             flights_from_apt.setdefault(flight[0],{})    \
                             .setdefault(flight[2],[])   \
                             .append(flight)
-            zones_prio[flight[5]] = zones_prio.setdefault(flight[5],0)+1
             zone_prices_to.setdefault(flight[5],[]).append(flight[3])              
     except StopIteration:
         pass
@@ -99,7 +97,6 @@ else:
             flights_from_apt.setdefault(flight[0],{})    \
                             .setdefault(flight[2],[])   \
                             .append(flight)
-            zones_prio[flight[5]] = zones_prio.setdefault(flight[5],0)+1
             zone_prices_to.setdefault(flight[5],[]).append(flight[3])    
     except EOFError:
         pass
@@ -136,12 +133,7 @@ sum_prices = 0
 
 first_time = True
 
-#####--- zones with less flights get higher priority
-avg_prio = sum(int(value) for key, value in zones_prio.iteritems()) / len(zones_prio)
-for zone in zones_name:
-    zones_prio[zone] = float(zones_prio[zone])/ float(avg_prio)
-
-#####--- zones to zones avg price is compared to price available each day to know if you should wait
+#####--- avg price to go to a zone is compared to price available each day to know if you should wait
 for key_to in zone_prices_to:
     zone_prices_to[key_to] = sum(int(value) for value in zone_prices_to[key_to]) / len(zone_prices_to[key_to])
 
@@ -175,24 +167,20 @@ while (time.time()-start) < time_to_solve or first_time : #----------while you s
             if choices.size > 0:
                 deals = []
                 overpaid_later = []
-                for choix in choices:
-                    deal_quality = int(choix[3].rstrip()) - zone_prices_to[choix[5]] 
-                    deals.extend([deal_quality])
+                for choix in choices: 
+                    deals.extend( [int(choix[3].rstrip()) - zone_prices_to.setdefault(choix[5],0) ]  )
                     overpaid_later.extend([overpaid.setdefault(choix[5],0)])
                 overpaid_later = np.array(overpaid_later) 
                 deals = np.array(deals)
-                min_price = np.amin(deals)
 
-                # normalizing with min to avoid negative values; 
-                # and using (1-day/size) because prob of finding cheaper goes down
-                # using size/300 to use more for big problems where prios are more important
-                rank = (choices[:,3].astype('float') +
-                        (deals[:] - overpaid_later))*(1-int(day)/size) * \
-                        ( np.vectorize(zones_prio.get)(choices[:,5])**(size/500) ) 
+                # using (1-day/size) because probability of finding cheaper goes down
+                # deals is checking if the price I see is good compared to average
+                # overpaid later checks if the price goes up later if I stay "greedy"
+                rank = choices[:,3].astype('float') + (deals - overpaid_later)*(1-float(day)/size) 
                         
                 choices = choices[rank.argsort()]
                 choice = choices[min(random.randint(one_off,one_off*5),len(choices)-1)]
-                one_off = 0                                                           
+                one_off = 0                        # make sure we "tilt" only once per rerun                                   
 
                 new_airport = choice[1]
                 new_zone = choice[5]
@@ -241,7 +229,7 @@ while (time.time()-start) < time_to_solve or first_time : #----------while you s
         sum_prices = new_price
         blacklist_saved = blacklist[:]
 
-        for itin in winner:
+        for itin in winner: # -- check how much I overpaid
             overpaid[itin[5]] = int(itin[3]) - zone_prices_to[itin[5]]
     else:
         blacklist = blacklist_saved[:]
