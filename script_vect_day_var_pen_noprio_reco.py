@@ -46,9 +46,9 @@ start = time.time()
 #--------------------hyper parameters------------------
 one_off_steps = 1
 deal_weight = 0.5
-over_weight = 0
-recom_weight = 0
-rerun_divider = 2
+over_weight = 0.5
+recom_weight = 2
+rerun_divider = 1
 text_input = 'input_xlarge.txt'
 
 #---------------------------- read data ---------------------------------------------------#

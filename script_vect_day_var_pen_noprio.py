@@ -181,7 +181,7 @@ while (time.time()-start) < time_to_solve or first_time : #----------while you s
                         
                 choices = choices[rank.argsort()]
                 choice = choices[min(random.randint(one_off,one_off*5),len(choices)-1)]
-                one_off = 0                        # make sure we "tilt" only once per rerun                                   
+                one_off = max(0, one_off-1)                        # make sure we "tilt" only once per rerun                                   
 
                 new_airport = choice[1]
                 new_zone = choice[5]
@@ -236,7 +236,7 @@ while (time.time()-start) < time_to_solve or first_time : #----------while you s
         blacklist = blacklist_saved[:]
 
     rerun = rerun+1
-    one_off = 1
+    one_off = 2
     
     #------------- if you have time, go back to a random point and solve it differently
     random_rewind = random.randint(1,size)

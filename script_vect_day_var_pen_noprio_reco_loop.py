@@ -45,7 +45,7 @@ def flag(tag=''):
 input_list = ['input_small.txt', 'input_medium.txt', 'input_large.txt', 'input_xlarge.txt']
 for one_off_it in range(0,3):
     for deal_weight_it in range(0,3):
-        for over_weight_it in range(0,3):
+        for over_weight_it in range(0,3): 
             for recom_weight_it in range(0,3):
                 for rerun_divider in range(1,4): 
                     for text_input in input_list:
